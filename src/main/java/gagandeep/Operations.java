@@ -18,28 +18,28 @@ public class Operations {
         if (session != null) {
             Scanner scanner = new Scanner(System.in);
 
-            while (true) {
-                System.out.println("Enter CRUD operation (C/R/U/D) or T to create table or Q to quit:");
+            while (true) { 
+                System.out.println("Choose any of the options:\n1. Add records\n2. Read a table\n3. Update a record in a table.\n4. Delete a Table\n5. Create a new table.\n6. Quit");
                 String operation = scanner.nextLine().toUpperCase();
 
-                if (operation.equals("Q")) {
+                if (operation.equals("6")) {
                     break;
                 }
 
                 switch (operation) {
-                    case "C":
-                        createBook(session, scanner);
+                    case "1":
+                        createRecord(session, scanner);
                         break;
-                    case "R":
+                    case "2":
                         readTable(session, scanner);
                         break;
-                    case "U":
+                    case "3":
                         updateBook(session, scanner);
                         break;
-                    case "D":
+                    case "4":
                         deleteBook(session, scanner);
                         break;
-                    case "T":
+                    case "5":
                         createTable(session, scanner);
                         break;
                 }
@@ -51,19 +51,72 @@ public class Operations {
         }
     }
 
-    private static void createBook(CqlSession session, Scanner scanner) {
-        System.out.println("Enter book title:");
-        String title = scanner.nextLine();
-        System.out.println("Enter author:");
-        String author = scanner.nextLine();
-        System.out.println("Enter price:");
-        double price = scanner.nextDouble();
-
-        String cql = "INSERT INTO books (title, author, price) VALUES ('" + title + "', '" + author + "', " + price + ")";
-        //System.out.println(cql);
+    private static void createRecord(CqlSession session, Scanner scanner) {
+        System.out.println("Select the table to insert records into:");
+        System.out.println("1. ks_books.books");
+        System.out.println("2. ks_books.fiction");
+        System.out.println("3. ks_books.novels");
+        int choice = scanner.nextInt();
+        scanner.nextLine(); // Consume newline left-over
+    
+        String table;
+        String columns;
+        switch (choice) {
+            case 1:
+                table = "ks_books.books";
+                columns = "title, author, price";
+                break;
+            case 2:
+                table = "ks_books.fiction";
+                columns = "author, title, year";
+                break;
+            case 3:
+                table = "ks_books.novels";
+                columns = "title, author, price";
+                break;
+            default:
+                System.out.println("Invalid choice.");
+                return;
+        }
+    
+        System.out.println("Enter the following columns for the " + table + " table: " + columns);
+        String[] colArray = columns.split(",\\s*");
+        Map<String, Object> values = new HashMap<>();
+        for (String column : colArray) {
+            System.out.println("Enter " + column + ":");
+            String input = scanner.nextLine();
+            switch (column) {
+                case "title":
+                case "author":
+                case "year":
+                    values.put(column, input);
+                    break;
+                case "price":
+                    values.put(column, Double.parseDouble(input));
+                    break;
+                default:
+                    System.out.println("Invalid column: " + column);
+                    return;
+            }
+        }
+    
+        String cql = "INSERT INTO " + table + " (" + columns + ") VALUES (";
+        for (String column : colArray) {
+            Object value = values.get(column);
+            if (value instanceof String) {
+                cql += "'" + value + "', ";
+            } else if (value instanceof Double) {
+                cql += value + ", ";
+            }
+        }
+        cql = cql.substring(0, cql.length() - 2) + ")";
+    
         session.execute(cql);
-        System.out.println("Book added successfully.");
+        System.out.println("Record added successfully.");
     }
+    
+    
+    
     private static void createTable(CqlSession session, Scanner scanner) {
         
         System.out.println("Enter Table Name:");
